@@ -1,0 +1,58 @@
+# Development environment for local testing (2 client containers -> server running on the physical host)
+#
+# Usage during development:
+#   1. Build the project on the host:   .\mvnw.cmd package
+#   2. Start the server on the host:    java -jar launcher-server/target/launcher-server.jar
+#   3. Start 2 agents in Docker:        docker compose up -d
+#   4. Follow agent logs:               docker compose logs -f
+#   5. Stop agents:                     docker compose down
+
+services:
+  agent-1:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.agent
+    image: psr-launcher-agent-dev:latest
+    container_name: psr-agent-1
+    hostname: agent-docker-1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./launcher-agent/target/launcher-agent.jar:/app/launcher-agent.jar:ro
+    command:
+      - "--server"
+      - "${PSR_SERVER_HOST:-host.docker.internal}:${PSR_SERVER_PORT:-54321}"
+      - "--node-id"
+      - "docker-node-1"
+      - "--name"
+      - "agent-docker-1"
+      - "--max-tasks"
+      - "4"
+    networks:
+      - psr-dev-net
+
+  agent-2:
+    image: psr-launcher-agent-dev:latest
+    depends_on:
+      - agent-1
+    container_name: psr-agent-2
+    hostname: agent-docker-2
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./launcher-agent/target/launcher-agent.jar:/app/launcher-agent.jar:ro
+    command:
+      - "--server"
+      - "${PSR_SERVER_HOST:-host.docker.internal}:${PSR_SERVER_PORT:-54321}"
+      - "--node-id"
+      - "docker-node-2"
+      - "--name"
+      - "agent-docker-2"
+      - "--max-tasks"
+      - "4"
+    networks:
+      - psr-dev-net
+
+networks:
+  psr-dev-net:
+    driver: bridge

@@ -1,0 +1,13 @@
+FROM eclipse-temurin:21-jre
+
+# System utilities useful for testing remote application execution (ping, ip, ps)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    iputils-ping \
+    iproute2 \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# The launcher-agent.jar artifact is mounted from the host (./launcher-agent/target/launcher-agent.jar)
+ENTRYPOINT ["java", "-jar", "/app/launcher-agent.jar"]
